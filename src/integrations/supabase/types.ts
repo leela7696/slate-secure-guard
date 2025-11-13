@@ -14,7 +14,218 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      audit_logs: {
+        Row: {
+          action: string
+          actor_email: string | null
+          actor_id: string | null
+          actor_role: string | null
+          chain_hash: string
+          created_at: string
+          details: Json | null
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          module: string
+          prev_hash: string | null
+          success: boolean
+          target_id: string | null
+          target_summary: string | null
+          target_type: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          action: string
+          actor_email?: string | null
+          actor_id?: string | null
+          actor_role?: string | null
+          chain_hash: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          module: string
+          prev_hash?: string | null
+          success?: boolean
+          target_id?: string | null
+          target_summary?: string | null
+          target_type?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string
+          actor_email?: string | null
+          actor_id?: string | null
+          actor_role?: string | null
+          chain_hash?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          module?: string
+          prev_hash?: string | null
+          success?: boolean
+          target_id?: string | null
+          target_summary?: string | null
+          target_type?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
+      chain_head: {
+        Row: {
+          id: number
+          latest_hash: string
+        }
+        Insert: {
+          id?: number
+          latest_hash?: string
+        }
+        Update: {
+          id?: number
+          latest_hash?: string
+        }
+        Relationships: []
+      }
+      otp_requests: {
+        Row: {
+          attempts_left: number
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          name: string
+          otp_hash: string
+          password_hash: string
+          resend_after: string
+        }
+        Insert: {
+          attempts_left?: number
+          created_at?: string
+          email: string
+          expires_at: string
+          id?: string
+          name: string
+          otp_hash: string
+          password_hash: string
+          resend_after: string
+        }
+        Update: {
+          attempts_left?: number
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          name?: string
+          otp_hash?: string
+          password_hash?: string
+          resend_after?: string
+        }
+        Relationships: []
+      }
+      permissions: {
+        Row: {
+          can_create: boolean
+          can_delete: boolean
+          can_edit: boolean
+          can_view: boolean
+          id: number
+          module: string
+          role_name: string
+        }
+        Insert: {
+          can_create?: boolean
+          can_delete?: boolean
+          can_edit?: boolean
+          can_view?: boolean
+          id?: number
+          module: string
+          role_name: string
+        }
+        Update: {
+          can_create?: boolean
+          can_delete?: boolean
+          can_edit?: boolean
+          can_view?: boolean
+          id?: number
+          module?: string
+          role_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "permissions_role_name_fkey"
+            columns: ["role_name"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["name"]
+          },
+        ]
+      }
+      roles: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: number
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: number
+          name: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: number
+          name?: string
+        }
+        Relationships: []
+      }
+      users: {
+        Row: {
+          created_at: string
+          email: string
+          external_providers: Json | null
+          id: string
+          is_deleted: boolean
+          last_login_at: string | null
+          name: string
+          password_hash: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          external_providers?: Json | null
+          id?: string
+          is_deleted?: boolean
+          last_login_at?: string | null
+          name: string
+          password_hash?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          external_providers?: Json | null
+          id?: string
+          is_deleted?: boolean
+          last_login_at?: string | null
+          name?: string
+          password_hash?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +234,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      app_role: "System Admin" | "Admin" | "Manager" | "User"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +361,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["System Admin", "Admin", "Manager", "User"],
+    },
   },
 } as const
