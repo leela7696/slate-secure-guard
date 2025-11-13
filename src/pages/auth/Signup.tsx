@@ -30,17 +30,31 @@ const Signup = () => {
   const onSubmit = async (data: SignupForm) => {
     setLoading(true);
     try {
-      // TODO: API call to send OTP
-      console.log("Signup data:", data);
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify(data),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to send verification code');
+      }
+
       toast({
         title: "Verification code sent",
         description: "Please check your email for the OTP code.",
       });
       navigate("/auth/verify-otp", { state: { email: data.email } });
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to send verification code. Please try again.';
       toast({
         title: "Error",
-        description: "Failed to send verification code. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {

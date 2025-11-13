@@ -53,18 +53,43 @@ const VerifyOtp = () => {
 
     setLoading(true);
     try {
-      // TODO: API call to verify OTP
-      console.log("Verifying OTP:", otp, "for email:", email);
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({ email, otp }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        if (result.error === 'INVALID_OTP') {
+          setAttemptsLeft(result.attempts_left);
+          throw new Error(`Invalid code. ${result.attempts_left} attempts remaining.`);
+        } else if (result.error === 'OTP_EXPIRED') {
+          throw new Error('OTP has expired. Please sign up again.');
+        } else if (result.error === 'OTP_LOCKED') {
+          throw new Error('Too many failed attempts. Please sign up again.');
+        }
+        throw new Error(result.error || 'Verification failed');
+      }
+
+      // Store token and user data
+      localStorage.setItem('auth_token', result.token);
+      localStorage.setItem('user', JSON.stringify(result.user));
+
       toast({
         title: "Success",
         description: "Account created successfully!",
       });
       navigate("/dashboard");
     } catch (error) {
-      setAttemptsLeft(prev => prev - 1);
+      const errorMessage = error instanceof Error ? error.message : 'Verification failed';
       toast({
         title: "Verification failed",
-        description: `Invalid code. ${attemptsLeft - 1} attempts remaining.`,
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -75,10 +100,32 @@ const VerifyOtp = () => {
   const handleResend = async () => {
     setResendLoading(true);
     try {
-      // TODO: API call to resend OTP
-      console.log("Resending OTP to:", email);
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/resend-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        if (result.rate_limited) {
+          toast({
+            title: "Please wait",
+            description: result.message,
+          });
+          return;
+        }
+        throw new Error(result.error || 'Failed to resend code');
+      }
+
       setCountdown(60);
       setCanResend(false);
+      setAttemptsLeft(5); // Reset attempts on resend
+      
       toast({
         title: "Code sent",
         description: "A new verification code has been sent to your email.",
@@ -95,9 +142,10 @@ const VerifyOtp = () => {
         });
       }, 1000);
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to resend code. Please try again.';
       toast({
         title: "Error",
-        description: "Failed to resend code. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {

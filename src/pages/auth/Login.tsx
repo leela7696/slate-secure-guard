@@ -29,17 +29,35 @@ const Login = () => {
   const onSubmit = async (data: LoginForm) => {
     setLoading(true);
     try {
-      // TODO: API call to login
-      console.log("Login data:", data);
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify(data),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Invalid email or password');
+      }
+
+      // Store token and user data
+      localStorage.setItem('auth_token', result.token);
+      localStorage.setItem('user', JSON.stringify(result.user));
+
       toast({
         title: "Success",
         description: "Logged in successfully!",
       });
       navigate("/dashboard");
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Invalid email or password.';
       toast({
         title: "Error",
-        description: "Invalid email or password.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
