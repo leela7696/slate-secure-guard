@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import * as bcrypt from "https://deno.land/x/bcrypt@v0.4.1/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -67,8 +66,35 @@ function generateOTP(length: number = 6): string {
   return otp;
 }
 
-async function hashOTP(otp: string): Promise<string> {
-  return await bcrypt.hash(otp);
+async function hashPassword(password: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(password);
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  
+  const key = await crypto.subtle.importKey(
+    "raw",
+    data,
+    { name: "PBKDF2" },
+    false,
+    ["deriveBits"]
+  );
+  
+  const derivedBits = await crypto.subtle.deriveBits(
+    {
+      name: "PBKDF2",
+      salt: salt,
+      iterations: 100000,
+      hash: "SHA-256"
+    },
+    key,
+    256
+  );
+  
+  const hashArray = new Uint8Array(derivedBits);
+  const saltHex = Array.from(salt).map(b => b.toString(16).padStart(2, '0')).join('');
+  const hashHex = Array.from(hashArray).map(b => b.toString(16).padStart(2, '0')).join('');
+  
+  return `${saltHex}:${hashHex}`;
 }
 
 serve(async (req) => {
@@ -131,7 +157,7 @@ serve(async (req) => {
 
     // Generate new OTP
     const otp = generateOTP(6);
-    const otpHash = await hashOTP(otp);
+    const otpHash = await hashPassword(otp);
 
     const resendCooldownSeconds = 60;
     const newResendAfter = new Date(now.getTime() + resendCooldownSeconds * 1000);
