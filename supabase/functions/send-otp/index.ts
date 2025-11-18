@@ -57,8 +57,9 @@ async function sendEmail(to: string, otp: string, name: string) {
 
   if (!response.ok) {
     const error = await response.text();
-    console.error('Email send error:', error);
-    throw new Error('Failed to send email');
+    console.error('Email send error - Status:', response.status);
+    console.error('Email send error - Response:', error);
+    throw new Error(`Failed to send email: ${error}`);
   }
 
   return true;
